@@ -84,7 +84,6 @@ class ProductClient:
                 return self._token
 
             credentials = f"{self.config.user_id}:{self.config.credential_token}".encode()
-            print(f"Credential: ${credentials}")
             response = self._send(
                 "POST",
                 f"/{self.product}/token/",
