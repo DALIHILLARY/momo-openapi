@@ -95,7 +95,7 @@ legacy = Collection.from_env(platform="legacy")
 new = Collection.from_env(platform="new")
 ```
 
-A pair is always taken whole. The new platform never falls back to the old `*_API_SECRET`, because one platform's credentials never work on the other.
+A pair is always taken whole. The new platform never falls back to the old `*_API_SECRET`, because one platform's credentials never work on the other. [examples/legacy_and_new.py](examples/legacy_and_new.py) is a runnable version of this setup.
 
 ### Using a `.env` file
 
@@ -217,16 +217,14 @@ uv venv && uv pip install -e ".[dev]"
 .venv/bin/pytest
 ```
 
-[tests/test_live_collection.py](tests/test_live_collection.py) is skipped by default. It sends a real request-to-pay prompt through the legacy platform, the new platform, or both, depending on which credentials are set. It then waits for you to approve on the phone and checks that the payment succeeded. Put the credentials in `.env`, copied from `.env.example`. Then run `MOMO_LIVE_TESTS=1 .venv/bin/pytest -m live -s`, adding `-k legacy` or `-k new` to test just one platform. Keep `MOMO_LIVE_TESTS` on the command line, not in `.env`, so a plain `pytest` run never sends a prompt.
-
-[momo-new-platform.http](momo-new-platform.http) has raw HTTP requests for the new platform, for the VS Code REST Client extension. It covers client auth, including failure cases (missing `X-Target-Environment`, wrong credentials, no subscription key, the blocked User-Agent), and every collection, disbursement and remittance call. It reads `.env` from the same folder, and it is useful for checking the platform without going through Python.
-
-For manual checks, [momo_pay.py](momo_pay.py) uses the settings in `.env`. It can collect a payment, make a payout, or look up an earlier transaction, and it waits for the final status. It follows `BASE_URL`, and it is not part of the published package.
+[examples/legacy_and_new.py](examples/legacy_and_new.py) shows the package on both platforms side by side, and it doubles as a manual check. It reads `.env` and passes `platform=` for every call, so `BASE_URL` doesn't matter. It can check each platform's credentials and balance, collect a payment or make a payout and wait for the final status, and find an earlier transaction on whichever platform created it. It is not part of the published package. `collect` and `disburse` move real money.
 
 ```bash
-.venv/bin/python momo_pay.py collect --amount 100 --ref swap-123
-.venv/bin/python momo_pay.py status <reference>
-.venv/bin/python momo_pay.py disburse --amount 30000 --ref payout-7
+.venv/bin/python examples/legacy_and_new.py token                  # both platforms
+.venv/bin/python examples/legacy_and_new.py balance --platform legacy
+.venv/bin/python examples/legacy_and_new.py collect --platform new --amount 100 --ref swap-123
+.venv/bin/python examples/legacy_and_new.py disburse --platform legacy --amount 30000 --ref payout-7
+.venv/bin/python examples/legacy_and_new.py status <reference>     # tries each platform
 ```
 
 ## License
