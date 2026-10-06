@@ -95,7 +95,7 @@ legacy = Collection.from_env(platform="legacy")
 new = Collection.from_env(platform="new")
 ```
 
-A pair is always taken whole. The new platform never falls back to the old `*_API_SECRET`, because one platform's credentials never work on the other. [examples/legacy_and_new.py](examples/legacy_and_new.py) is a runnable version of this setup.
+A pair is always taken whole. The new platform never falls back to the old `*_API_SECRET`, because one platform's credentials never work on the other. [examples/](examples/README.md) has a script per platform for each operation.
 
 ### Using a `.env` file
 
@@ -217,15 +217,23 @@ uv venv && uv pip install -e ".[dev]"
 .venv/bin/pytest
 ```
 
-[examples/legacy_and_new.py](examples/legacy_and_new.py) shows the package on both platforms side by side, and it doubles as a manual check. It reads `.env` and passes `platform=` for every call, so `BASE_URL` doesn't matter. It can check each platform's credentials and balance, collect a payment or make a payout and wait for the final status, and find an earlier transaction on whichever platform created it. It is not part of the published package. `collect` and `disburse` move real money.
+[examples/](examples/README.md) has one script per platform and operation, in `legacy/` and `new/`: check credentials, balance, collect, disburse and remit, and the status of each payment. They read `.env` and double as manual checks. They are not part of the published package. `collect`, `disburse` and `remit` move real money.
 
 ```bash
-.venv/bin/python examples/legacy_and_new.py token                  # both platforms
-.venv/bin/python examples/legacy_and_new.py balance --platform legacy
-.venv/bin/python examples/legacy_and_new.py collect --platform new --amount 100 --ref swap-123
-.venv/bin/python examples/legacy_and_new.py disburse --platform legacy --amount 30000 --ref payout-7
-.venv/bin/python examples/legacy_and_new.py status <reference>     # tries each platform
+.venv/bin/python examples/new/check_credentials.py
+.venv/bin/python examples/legacy/collect.py 100 --ref swap-123
+.venv/bin/python examples/legacy/collect_status.py <reference>
+.venv/bin/python examples/new/disburse.py 30000 --ref payout-7
 ```
+
+### Releasing
+
+[.github/workflows/publish.yml](.github/workflows/publish.yml) publishes to PyPI with [Trusted Publishing](https://docs.pypi.org/trusted-publishers/), so no API token is stored anywhere.
+
+1. Bump `__version__` in [src/momo_openapi/_version.py](src/momo_openapi/_version.py), add a [CHANGELOG.md](CHANGELOG.md) entry, then commit and push.
+2. Publish a GitHub release tagged `v<version>`, e.g. `v0.1.1`.
+
+The workflow checks that the tag matches `__version__`, runs the tests, builds and checks the distributions, and uploads them through the `pypi` environment. If that environment requires a reviewer, the upload waits for approval.
 
 ## License
 
