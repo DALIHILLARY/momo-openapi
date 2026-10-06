@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "momo-openapi"
+dynamic = ["version"]
+description = "Python client for the MTN MoMo Open API, ready for the momoapi.momo.africa platform migration."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [{ name = "Dali Hillary", email = "hillary@zem.bo" }]
+keywords = ["mtn", "momo", "mobile money", "payments", "collections", "disbursements", "remittance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial",
+    "Typing :: Typed",
+]
+dependencies = ["requests>=2.25"]
+
+[project.optional-dependencies]
+dotenv = ["python-dotenv>=1.0"]
+dev = ["pytest>=7", "responses>=0.23", "python-dotenv>=1.0", "tenacity>=8"]
+
+[project.scripts]
+momo-openapi = "momo_openapi.cli:main"
+
+[tool.hatch.version]
+path = "src/momo_openapi/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/momo_openapi"]
+
+# Explicit list so nothing else in the working tree (e.g. partner PDFs) ends up in the sdist.
+[tool.hatch.build.targets.sdist]
+only-include = ["src/momo_openapi", "tests", "README.md", "LICENSE", "CHANGELOG.md", "pyproject.toml", ".env.example"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["live: sends real requests to MoMo; needs MOMO_LIVE_TESTS=1 and credentials"]
