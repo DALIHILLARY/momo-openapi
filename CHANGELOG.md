@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.1.0 (2026-09-28)
+<!-- version list -->
 
-First release, built for the MoMo Open API platform migration.
+Built for the MoMo Open API platform migration.
 
 - Collection, Disbursement and Remittance clients.
 - Defaults to the new platform, `https://momoapi.momo.africa`. Set `BASE_URL` to stay on `https://proxy.momoapi.mtn.com` until MTN confirms cutover.
