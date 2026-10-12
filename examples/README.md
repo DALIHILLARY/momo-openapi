@@ -23,7 +23,7 @@ Copy [.env.example](../.env.example) to `.env` in the repo root and fill in the 
 | Credentials | `COLLECTION_USER_ID` + `COLLECTION_API_SECRET` | `COLLECTION_NEW_USER_ID` + `COLLECTION_NEW_CREDENTIAL_TOKEN` |
 | Shared | `COLLECTION_PRIMARY_KEY`, `MTN_ENVIRONMENT`, `CURRENCY`, `CALLBACK_URL` | same |
 
-`DISBURSEMENT_*` and `REMITTANCE_*` follow the same pattern. `MOMO_TEST_PHONE` sets the default `--phone`.
+`DISBURSEMENT_*` and `REMITTANCE_*` follow the same pattern. `MOMO_TEST_PHONE` sets the default `--phone`. The scripts pass `platform=` themselves, so they ignore `PLATFORM`.
 
 The scripts need `python-dotenv` (`pip install "momo-openapi[dotenv]"`). Run them from the repo root:
 

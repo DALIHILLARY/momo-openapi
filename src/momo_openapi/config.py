@@ -20,6 +20,8 @@ PRODUCTS = ("collection", "disbursement", "remittance")
 PLATFORM_URLS = {"legacy": LEGACY_PLATFORM_URL, "new": NEW_PLATFORM_URL}
 # Like the credentials, the unprefixed name belongs to the legacy platform and NEW_ to the new one.
 PLATFORM_URL_VARIABLES = {"legacy": "BASE_URL", "new": "NEW_BASE_URL"}
+# Picks the platform when the code passes none, so a deployment can switch without a code change.
+PLATFORM_VARIABLE = "PLATFORM"
 
 
 @dataclass(frozen=True)
@@ -75,9 +77,10 @@ class MomoConfig:
         The variable names match the legacy integration, so existing deployments
         only need new values. See the README for the full list.
 
-        By default BASE_URL picks the platform. ``platform`` ("legacy" or "new")
-        reads that platform's own base URL and credentials instead, so both can be
-        configured side by side while they run in parallel:
+        ``platform`` ("legacy" or "new") reads that platform's own base URL and
+        credentials, so both can be configured side by side while they run in
+        parallel. Without it, the PLATFORM variable picks the platform the same
+        way, and without that, BASE_URL does with the default credential names:
 
         - legacy: ``BASE_URL`` (default ``https://proxy.momoapi.mtn.com``) with
           ``{P}_USER_ID`` and ``{P}_API_SECRET``, the old API user and key
@@ -88,9 +91,8 @@ class MomoConfig:
         """
         if product not in PRODUCTS:
             raise ConfigurationError(f"Unknown product {product!r}, expected one of {PRODUCTS}")
-        if platform is not None and platform not in PLATFORM_URLS:
-            raise ConfigurationError(f"Unknown platform {platform!r}, expected one of {tuple(PLATFORM_URLS)}")
         env = os.environ if environ is None else environ
+        platform = platform_from_env(env, platform)
         prefix = product.upper()
 
         required = {
@@ -132,6 +134,26 @@ class MomoConfig:
             timeout=float(timeout) if timeout else 30.0,
             proxy_url=_first(env, ("MOMO_PROXY_URL", "QUOTAGUARDSTATIC_URL")),
         )
+
+
+def platform_from_env(env: Mapping[str, str], platform: str | None = None) -> str | None:
+    """Return ``platform`` if given, else the PLATFORM variable, else None.
+
+    PLATFORM is case-insensitive and empty means unset. Either way the result is
+    "legacy", "new" or None.
+    """
+    if platform is not None:
+        if platform not in PLATFORM_URLS:
+            raise ConfigurationError(f"Unknown platform {platform!r}, expected one of {tuple(PLATFORM_URLS)}")
+        return platform
+    value = env.get(PLATFORM_VARIABLE, "").strip().lower()
+    if not value:
+        return None
+    if value not in PLATFORM_URLS:
+        raise ConfigurationError(
+            f"Unknown platform {env[PLATFORM_VARIABLE]!r} in {PLATFORM_VARIABLE}, expected one of {tuple(PLATFORM_URLS)}"
+        )
+    return value
 
 
 def base_url_from_env(env: Mapping[str, str], platform: str | None = None) -> str:

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Sequence
 
 from .collection import Collection
-from .config import NEW_PLATFORM_URL, PLATFORM_URLS, PRODUCTS, MomoConfig, base_url_from_env
+from .config import NEW_PLATFORM_URL, PLATFORM_URLS, PRODUCTS, MomoConfig, base_url_from_env, platform_from_env
 from .connectivity import check_connectivity
 from .disbursement import Disbursement
 from .errors import ConfigurationError, MomoError
@@ -30,11 +30,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
 
     check = commands.add_parser("check", help="check that this machine can reach the MoMo base URL")
-    check.add_argument("--base-url", help=f"defaults to $BASE_URL, then {NEW_PLATFORM_URL}")
+    check.add_argument("--base-url", help=f"defaults to the platform's URL, else $BASE_URL, then {NEW_PLATFORM_URL}")
     check.add_argument(
         "--platform",
         choices=PLATFORM_URLS,
-        help="check this platform's URL instead: $BASE_URL for legacy, $NEW_BASE_URL for new, else MTN's",
+        help="check this platform's URL: $BASE_URL for legacy, $NEW_BASE_URL for new, else MTN's; default: $PLATFORM",
     )
     check.add_argument("--timeout", type=float, default=10.0)
 
@@ -44,19 +44,24 @@ def main(argv: Sequence[str] | None = None) -> int:
     token.add_argument(
         "--platform",
         choices=PLATFORM_URLS,
-        help="use this platform's URL and credentials (NEW_BASE_URL and *_NEW_* for new); default: BASE_URL",
+        help="use this platform's URL and credentials (NEW_BASE_URL and *_NEW_* for new); "
+        "default: $PLATFORM, else BASE_URL",
     )
 
     args = parser.parse_args(argv)
     _load_env_file(parser, args.env_file)
+    try:
+        platform = platform_from_env(os.environ, args.platform)
+    except ConfigurationError as exc:
+        parser.error(str(exc))
     if args.command == "token":
         unknown = sorted(set(args.products) - set(PRODUCTS))
         if unknown:
             token.error(f"unknown product(s) {', '.join(unknown)}; choose from {', '.join(PRODUCTS)}")
     if args.command == "check":
-        base_url = args.base_url or base_url_from_env(os.environ, args.platform) or NEW_PLATFORM_URL
+        base_url = args.base_url or base_url_from_env(os.environ, platform) or NEW_PLATFORM_URL
         return _check(base_url, args.timeout)
-    return _token(args.products or PRODUCTS, explicit=bool(args.products), platform=args.platform)
+    return _token(args.products or PRODUCTS, explicit=bool(args.products), platform=platform)
 
 
 def _load_env_file(parser: argparse.ArgumentParser, path: str | None) -> None:
