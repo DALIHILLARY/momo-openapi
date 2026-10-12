@@ -2,6 +2,10 @@
 
 <!-- version list -->
 
+## v0.1.0 (2026-10-12)
+
+- Initial Release
+
 Built for the MoMo Open API platform migration.
 
 - Collection, Disbursement and Remittance clients.
