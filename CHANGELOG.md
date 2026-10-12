@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.1.1 (2026-10-12)
+
+### Bug Fixes
+
+- Add platform env
+  ([`478d74c`](https://github.com/DALIHILLARY/momo-openapi/commit/478d74c5c276f0fbe1436de1617f4004751df79b))
+
+
 ## v0.1.0 (2026-10-12)
 
 - Initial Release
