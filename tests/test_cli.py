@@ -15,7 +15,7 @@ ENV = {
     "MTN_ENVIRONMENT": "mtnuganda",
 }
 MOMO_PREFIXES = ("COLLECTION_", "DISBURSEMENT_", "REMITTANCE_", "MOMO_")
-MOMO_VARIABLES = {"BASE_URL", "NEW_BASE_URL", "MTN_ENVIRONMENT", "CALLBACK_URL", "CURRENCY", "QUOTAGUARDSTATIC_URL"}
+MOMO_VARIABLES = {"PLATFORM", "BASE_URL", "NEW_BASE_URL", "MTN_ENVIRONMENT", "CALLBACK_URL", "CURRENCY", "QUOTAGUARDSTATIC_URL"}
 
 
 @pytest.fixture
@@ -120,6 +120,35 @@ def test_check_command_platform_reads_that_platforms_url(env, mocked, resolves, 
     out = capsys.readouterr().out
     assert [line.split()[1] for line in out.splitlines()] == [LEGACY_PLATFORM_URL, "https://new.example", NEW_PLATFORM_URL]
 
+
+
+def test_token_command_reads_platform_variable(env, mocked, capsys):
+    os.environ.update({"PLATFORM": "new", "BASE_URL": LEGACY_PLATFORM_URL, "COLLECTION_NEW_USER_ID": "new-user", "COLLECTION_NEW_CREDENTIAL_TOKEN": "new-token"})
+    add_token(mocked, "collection")
+
+    assert main(["token", "collection"]) == 0
+    assert mocked.calls[0].request.url == f"{NEW_PLATFORM_URL}/collection/token/"
+    assert "token issued by https://momoapi.momo.africa" in capsys.readouterr().out
+
+
+def test_check_command_reads_platform_variable_unless_overridden(env, mocked, resolves, capsys):
+    os.environ.update({"PLATFORM": "legacy", "NEW_BASE_URL": "https://new.example"})
+    mocked.get(LEGACY_PLATFORM_URL, status=404)
+    mocked.get("https://new.example", status=404)
+
+    assert main(["check"]) == 0
+    assert main(["check", "--platform", "new"]) == 0
+
+    out = capsys.readouterr().out
+    assert [line.split()[1] for line in out.splitlines()] == [LEGACY_PLATFORM_URL, "https://new.example"]
+
+
+def test_unknown_platform_variable_is_a_usage_error(env, capsys):
+    os.environ["PLATFORM"] = "x64"
+    with pytest.raises(SystemExit) as excinfo:
+        main(["token"])
+    assert excinfo.value.code == 2
+    assert "Unknown platform 'x64' in PLATFORM" in capsys.readouterr().err
 
 def test_check_connectivity_dns_failure(monkeypatch):
     def fail(*args, **kwargs):

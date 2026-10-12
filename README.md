@@ -74,34 +74,39 @@ The variable names match the older `mtnmomoapi` integration, so existing deploym
 | `COLLECTION_USER_ID` | User ID. Falls back to `MOMO_USER_ID`. |
 | `COLLECTION_CREDENTIAL_TOKEN` | Credential Token. Falls back to the old `COLLECTION_API_SECRET`, then `MOMO_CREDENTIAL_TOKEN`. |
 | `MTN_ENVIRONMENT` | `X-Target-Environment`, e.g. `mtnuganda`, `mtnzambia` or `sandbox`. Required. |
-| `BASE_URL` | Optional. Without `platform=`, defaults to `https://momoapi.momo.africa`, or to the sandbox when `MTN_ENVIRONMENT=sandbox`. With `platform="legacy"`, defaults to `https://proxy.momoapi.mtn.com`. |
+| `PLATFORM` | Optional. `legacy` or `new`: the platform to use when the code passes no `platform=`, see below. |
+| `BASE_URL` | Optional. Without a platform, defaults to `https://momoapi.momo.africa`, or to the sandbox when `MTN_ENVIRONMENT=sandbox`. For the legacy platform, defaults to `https://proxy.momoapi.mtn.com`. |
 | `CALLBACK_URL` | Optional. Sent as `X-Callback-Url`. |
 | `CURRENCY` | Default currency, e.g. `UGX`. The sandbox only accepts `EUR`. |
 | `MOMO_PROXY_URL` | Optional outbound proxy for static egress IPs. Falls back to `QUOTAGUARDSTATIC_URL`. |
 | `MOMO_TIMEOUT` | Request timeout in seconds. Default `30`. |
-| `NEW_BASE_URL` | Optional. The new platform's base URL, read only with `platform="new"`. Defaults to `https://momoapi.momo.africa`. |
-| `COLLECTION_NEW_USER_ID`, `COLLECTION_NEW_CREDENTIAL_TOKEN` | Optional. The new platform's credentials, kept next to the old ones while both platforms run. Read only with `platform="new"`, see below. |
+| `NEW_BASE_URL` | Optional. The new platform's base URL, read only for the new platform. Defaults to `https://momoapi.momo.africa`. |
+| `COLLECTION_NEW_USER_ID`, `COLLECTION_NEW_CREDENTIAL_TOKEN` | Optional. The new platform's credentials, kept next to the old ones while both platforms run. Read only for the new platform, see below. |
 
 ### Both platforms side by side
 
-During the migration you'll have two credential pairs: the old API user and key, and the new System Credentials. Pass `platform` to choose a platform. Each platform reads its own base URL and credential pair. The unprefixed names belong to the legacy platform and the `NEW_` names to the new one:
+During the migration you'll have two credential pairs: the old API user and key, and the new System Credentials. Configure both, then choose a platform with `PLATFORM`, or with `platform=` in code, which wins over `PLATFORM`. Each platform reads its own base URL and credential pair. The unprefixed names belong to the legacy platform and the `NEW_` names to the new one:
 
-| `platform=` | Base URL | Credentials read |
+| `PLATFORM` / `platform=` | Base URL | Credentials read |
 |---|---|---|
-| `"legacy"` | `BASE_URL`, default `https://proxy.momoapi.mtn.com` | `COLLECTION_USER_ID` + `COLLECTION_API_SECRET` |
-| `"new"` | `NEW_BASE_URL`, default `https://momoapi.momo.africa` | `COLLECTION_NEW_USER_ID` + `COLLECTION_NEW_CREDENTIAL_TOKEN`, else `COLLECTION_USER_ID` + `COLLECTION_CREDENTIAL_TOKEN`, else `MOMO_USER_ID` + `MOMO_CREDENTIAL_TOKEN` |
+| `legacy` | `BASE_URL`, default `https://proxy.momoapi.mtn.com` | `COLLECTION_USER_ID` + `COLLECTION_API_SECRET` |
+| `new` | `NEW_BASE_URL`, default `https://momoapi.momo.africa` | `COLLECTION_NEW_USER_ID` + `COLLECTION_NEW_CREDENTIAL_TOKEN`, else `COLLECTION_USER_ID` + `COLLECTION_CREDENTIAL_TOKEN`, else `MOMO_USER_ID` + `MOMO_CREDENTIAL_TOKEN` |
+
+Switching platforms is then a change to one variable, with no code change. Set it back to roll back:
 
 ```bash
+PLATFORM=legacy   # new at cutover
 BASE_URL=https://proxy.momoapi.mtn.com
 NEW_BASE_URL=https://momoapi.momo.africa
 ```
 
 ```python
-legacy = Collection.from_env(platform="legacy")
-new = Collection.from_env(platform="new")
+collection = Collection.from_env()                  # follows PLATFORM
+legacy = Collection.from_env(platform="legacy")     # always legacy
+new = Collection.from_env(platform="new")           # always new
 ```
 
-A pair is always taken whole. The new platform never falls back to the old `*_API_SECRET`, because one platform's credentials never work on the other. [examples/](examples/README.md) has a script per platform for each operation.
+`PLATFORM` is case-insensitive, and empty means unset. Any other value raises `ConfigurationError`. Without either, `BASE_URL` picks the URL and the default credential names are read, as in the table above. A pair is always taken whole. The new platform never falls back to the old `*_API_SECRET`, because one platform's credentials never work on the other. [examples/](examples/README.md) has a script per platform for each operation.
 
 ### Using a `.env` file
 
@@ -135,25 +140,25 @@ Credentials are issued per wallet, not per API. If Collections and Disbursements
 **After MTN confirms the new platform is ready:**
 
 6. In the Partner Portal, open **System and device credentials**, choose **+** under **System Credentials**, name the credential and choose **Create credential**. Copy the User ID and Credential Token immediately, because the token is not shown again.
-7. Put them in `*_NEW_USER_ID` / `*_NEW_CREDENTIAL_TOKEN` to run both platforms side by side. Or, at cutover, put them in `*_USER_ID` / `*_CREDENTIAL_TOKEN` and remove any `BASE_URL` override that points at the legacy platform.
+7. Put them in `*_NEW_USER_ID` / `*_NEW_CREDENTIAL_TOKEN`, next to your old API user and key. At cutover, set `PLATFORM=new`.
 8. Verify the credentials work:
    ```bash
    momo-openapi token --platform new              # every configured product
    momo-openapi token collection --platform new   # just one
    ```
-   It prints which platform and target environment issued the token. The token itself is never printed. Without `--platform`, it uses `BASE_URL` and the default credential names.
+   It prints which platform and target environment issued the token. The token itself is never printed. Without `--platform`, it uses `PLATFORM`, else `BASE_URL` and the default credential names.
 
-Until the new platform is confirmed, stay on the legacy platform with your existing API user and key:
+Until the new platform is confirmed, stay on the legacy platform with your existing API user and key in `*_USER_ID` / `*_API_SECRET`:
 
 ```bash
-BASE_URL=https://proxy.momoapi.mtn.com
+PLATFORM=legacy
 ```
 
 For questions, write to support.momodeveloper@mtn.com and cc your account manager.
 
 ## Running both platforms (pilot traffic)
 
-Both platforms run in parallel for one month after cutover. You can send part of your traffic to the new one first. Both kinds of transaction show up in the Partner Portal. **A transaction's status can only be read on the platform that processed it.** Keep a client per platform, and store `client.base_url` with each reference:
+Both platforms run in parallel for one month after cutover. You can send part of your traffic to the new one first. Both kinds of transaction show up in the Partner Portal. **A transaction's status can only be read on the platform that processed it.** Keep a client per platform, and store `client.base_url` with each reference. These clients pass `platform=`, so `PLATFORM` doesn't affect them:
 
 ```python
 from momo_openapi import Collection
