@@ -34,7 +34,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     check.add_argument(
         "--platform",
         choices=PLATFORM_URLS,
-        help="check this platform's URL: $BASE_URL for legacy, $NEW_BASE_URL for new, else MTN's; default: $PLATFORM",
+        help="check this platform's URL: $BASE_URL for legacy, $NEW_BASE_URL for new, else MTN's; "
+        "default: $MOMO_PLATFORM",
     )
     check.add_argument("--timeout", type=float, default=10.0)
 
@@ -45,7 +46,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--platform",
         choices=PLATFORM_URLS,
         help="use this platform's URL and credentials (NEW_BASE_URL and *_NEW_* for new); "
-        "default: $PLATFORM, else BASE_URL",
+        "default: $MOMO_PLATFORM, else BASE_URL",
     )
 
     args = parser.parse_args(argv)

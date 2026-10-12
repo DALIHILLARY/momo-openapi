@@ -21,7 +21,7 @@ PLATFORM_URLS = {"legacy": LEGACY_PLATFORM_URL, "new": NEW_PLATFORM_URL}
 # Like the credentials, the unprefixed name belongs to the legacy platform and NEW_ to the new one.
 PLATFORM_URL_VARIABLES = {"legacy": "BASE_URL", "new": "NEW_BASE_URL"}
 # Picks the platform when the code passes none, so a deployment can switch without a code change.
-PLATFORM_VARIABLE = "PLATFORM"
+PLATFORM_VARIABLE = "MOMO_PLATFORM"
 
 
 @dataclass(frozen=True)
@@ -79,8 +79,9 @@ class MomoConfig:
 
         ``platform`` ("legacy" or "new") reads that platform's own base URL and
         credentials, so both can be configured side by side while they run in
-        parallel. Without it, the PLATFORM variable picks the platform the same
-        way, and without that, BASE_URL does with the default credential names:
+        parallel. Without it, the MOMO_PLATFORM variable picks the platform the
+        same way, and without that, BASE_URL does with the default credential
+        names:
 
         - legacy: ``BASE_URL`` (default ``https://proxy.momoapi.mtn.com``) with
           ``{P}_USER_ID`` and ``{P}_API_SECRET``, the old API user and key
@@ -137,10 +138,10 @@ class MomoConfig:
 
 
 def platform_from_env(env: Mapping[str, str], platform: str | None = None) -> str | None:
-    """Return ``platform`` if given, else the PLATFORM variable, else None.
+    """Return ``platform`` if given, else the MOMO_PLATFORM variable, else None.
 
-    PLATFORM is case-insensitive and empty means unset. Either way the result is
-    "legacy", "new" or None.
+    MOMO_PLATFORM is case-insensitive and empty means unset. Either way the result
+    is "legacy", "new" or None.
     """
     if platform is not None:
         if platform not in PLATFORM_URLS:

@@ -146,26 +146,26 @@ def test_from_env_rejects_unknown_product():
 
 
 def test_from_env_platform_variable_picks_the_platform():
-    legacy = MomoConfig.from_env("collection", {**SIDE_BY_SIDE_ENV, "PLATFORM": "legacy"})
+    legacy = MomoConfig.from_env("collection", {**SIDE_BY_SIDE_ENV, "MOMO_PLATFORM": "legacy"})
     assert legacy.base_url == LEGACY_PLATFORM_URL
     assert (legacy.user_id, legacy.credential_token) == ("old-api-user", "old-api-key")
-    new = MomoConfig.from_env("collection", {**SIDE_BY_SIDE_ENV, "PLATFORM": " New "})
+    new = MomoConfig.from_env("collection", {**SIDE_BY_SIDE_ENV, "MOMO_PLATFORM": " New "})
     assert new.base_url == NEW_PLATFORM_URL
     assert (new.user_id, new.credential_token) == ("new-user-id", "new-token")
 
 
 def test_from_env_platform_argument_wins_over_platform_variable():
-    env = {**SIDE_BY_SIDE_ENV, "PLATFORM": "new"}
+    env = {**SIDE_BY_SIDE_ENV, "MOMO_PLATFORM": "new"}
     assert MomoConfig.from_env("collection", env, platform="legacy").user_id == "old-api-user"
 
 
 def test_from_env_empty_platform_variable_is_unset():
-    env = {**BASE_ENV, "PLATFORM": "", "BASE_URL": LEGACY_PLATFORM_URL}
+    env = {**BASE_ENV, "MOMO_PLATFORM": "", "BASE_URL": LEGACY_PLATFORM_URL}
     config = MomoConfig.from_env("collection", env)
     assert config.base_url == LEGACY_PLATFORM_URL
     assert (config.user_id, config.credential_token) == ("user-id", "cred-token")
 
 
 def test_from_env_rejects_unknown_platform_variable():
-    with pytest.raises(ConfigurationError, match="Unknown platform 'x64' in PLATFORM"):
-        MomoConfig.from_env("collection", {**SIDE_BY_SIDE_ENV, "PLATFORM": "x64"})
+    with pytest.raises(ConfigurationError, match="Unknown platform 'x64' in MOMO_PLATFORM"):
+        MomoConfig.from_env("collection", {**SIDE_BY_SIDE_ENV, "MOMO_PLATFORM": "x64"})

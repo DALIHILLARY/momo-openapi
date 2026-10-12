@@ -15,7 +15,7 @@ ENV = {
     "MTN_ENVIRONMENT": "mtnuganda",
 }
 MOMO_PREFIXES = ("COLLECTION_", "DISBURSEMENT_", "REMITTANCE_", "MOMO_")
-MOMO_VARIABLES = {"PLATFORM", "BASE_URL", "NEW_BASE_URL", "MTN_ENVIRONMENT", "CALLBACK_URL", "CURRENCY", "QUOTAGUARDSTATIC_URL"}
+MOMO_VARIABLES = {"BASE_URL", "NEW_BASE_URL", "MTN_ENVIRONMENT", "CALLBACK_URL", "CURRENCY", "QUOTAGUARDSTATIC_URL"}
 
 
 @pytest.fixture
@@ -123,7 +123,7 @@ def test_check_command_platform_reads_that_platforms_url(env, mocked, resolves, 
 
 
 def test_token_command_reads_platform_variable(env, mocked, capsys):
-    os.environ.update({"PLATFORM": "new", "BASE_URL": LEGACY_PLATFORM_URL, "COLLECTION_NEW_USER_ID": "new-user", "COLLECTION_NEW_CREDENTIAL_TOKEN": "new-token"})
+    os.environ.update({"MOMO_PLATFORM": "new", "BASE_URL": LEGACY_PLATFORM_URL, "COLLECTION_NEW_USER_ID": "new-user", "COLLECTION_NEW_CREDENTIAL_TOKEN": "new-token"})
     add_token(mocked, "collection")
 
     assert main(["token", "collection"]) == 0
@@ -132,7 +132,7 @@ def test_token_command_reads_platform_variable(env, mocked, capsys):
 
 
 def test_check_command_reads_platform_variable_unless_overridden(env, mocked, resolves, capsys):
-    os.environ.update({"PLATFORM": "legacy", "NEW_BASE_URL": "https://new.example"})
+    os.environ.update({"MOMO_PLATFORM": "legacy", "NEW_BASE_URL": "https://new.example"})
     mocked.get(LEGACY_PLATFORM_URL, status=404)
     mocked.get("https://new.example", status=404)
 
@@ -144,11 +144,11 @@ def test_check_command_reads_platform_variable_unless_overridden(env, mocked, re
 
 
 def test_unknown_platform_variable_is_a_usage_error(env, capsys):
-    os.environ["PLATFORM"] = "x64"
+    os.environ["MOMO_PLATFORM"] = "x64"
     with pytest.raises(SystemExit) as excinfo:
         main(["token"])
     assert excinfo.value.code == 2
-    assert "Unknown platform 'x64' in PLATFORM" in capsys.readouterr().err
+    assert "Unknown platform 'x64' in MOMO_PLATFORM" in capsys.readouterr().err
 
 def test_check_connectivity_dns_failure(monkeypatch):
     def fail(*args, **kwargs):
