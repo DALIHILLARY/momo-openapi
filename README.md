@@ -74,21 +74,27 @@ The variable names match the older `mtnmomoapi` integration, so existing deploym
 | `COLLECTION_USER_ID` | User ID. Falls back to `MOMO_USER_ID`. |
 | `COLLECTION_CREDENTIAL_TOKEN` | Credential Token. Falls back to the old `COLLECTION_API_SECRET`, then `MOMO_CREDENTIAL_TOKEN`. |
 | `MTN_ENVIRONMENT` | `X-Target-Environment`, e.g. `mtnuganda`, `mtnzambia` or `sandbox`. Required. |
-| `BASE_URL` | Optional. Defaults to `https://momoapi.momo.africa`, or to the sandbox when `MTN_ENVIRONMENT=sandbox`. |
+| `BASE_URL` | Optional. Without `platform=`, defaults to `https://momoapi.momo.africa`, or to the sandbox when `MTN_ENVIRONMENT=sandbox`. With `platform="legacy"`, defaults to `https://proxy.momoapi.mtn.com`. |
 | `CALLBACK_URL` | Optional. Sent as `X-Callback-Url`. |
 | `CURRENCY` | Default currency, e.g. `UGX`. The sandbox only accepts `EUR`. |
 | `MOMO_PROXY_URL` | Optional outbound proxy for static egress IPs. Falls back to `QUOTAGUARDSTATIC_URL`. |
 | `MOMO_TIMEOUT` | Request timeout in seconds. Default `30`. |
+| `NEW_BASE_URL` | Optional. The new platform's base URL, read only with `platform="new"`. Defaults to `https://momoapi.momo.africa`. |
 | `COLLECTION_NEW_USER_ID`, `COLLECTION_NEW_CREDENTIAL_TOKEN` | Optional. The new platform's credentials, kept next to the old ones while both platforms run. Read only with `platform="new"`, see below. |
 
 ### Both platforms side by side
 
-During the migration you'll have two credential pairs: the old API user and key, and the new System Credentials. Pass `platform` to choose a platform. That pins the base URL and reads that platform's own pair, ignoring `BASE_URL`:
+During the migration you'll have two credential pairs: the old API user and key, and the new System Credentials. Pass `platform` to choose a platform. Each platform reads its own base URL and credential pair. The unprefixed names belong to the legacy platform and the `NEW_` names to the new one:
 
 | `platform=` | Base URL | Credentials read |
 |---|---|---|
-| `"legacy"` | `proxy.momoapi.mtn.com` | `COLLECTION_USER_ID` + `COLLECTION_API_SECRET` |
-| `"new"` | `momoapi.momo.africa` | `COLLECTION_NEW_USER_ID` + `COLLECTION_NEW_CREDENTIAL_TOKEN`, else `COLLECTION_USER_ID` + `COLLECTION_CREDENTIAL_TOKEN`, else `MOMO_USER_ID` + `MOMO_CREDENTIAL_TOKEN` |
+| `"legacy"` | `BASE_URL`, default `https://proxy.momoapi.mtn.com` | `COLLECTION_USER_ID` + `COLLECTION_API_SECRET` |
+| `"new"` | `NEW_BASE_URL`, default `https://momoapi.momo.africa` | `COLLECTION_NEW_USER_ID` + `COLLECTION_NEW_CREDENTIAL_TOKEN`, else `COLLECTION_USER_ID` + `COLLECTION_CREDENTIAL_TOKEN`, else `MOMO_USER_ID` + `MOMO_CREDENTIAL_TOKEN` |
+
+```bash
+BASE_URL=https://proxy.momoapi.mtn.com
+NEW_BASE_URL=https://momoapi.momo.africa
+```
 
 ```python
 legacy = Collection.from_env(platform="legacy")
@@ -121,7 +127,7 @@ Credentials are issued per wallet, not per API. If Collections and Disbursements
 2. Upgrade to this package. It already sends `X-Target-Environment` on token requests.
 3. Check that the new base URL is reachable from your servers, through your firewall and proxy:
    ```bash
-   momo-openapi check
+   momo-openapi check --platform new
    ```
 4. If you whitelist MTN source IPs for callbacks, ask for the new list by replying to the migration email, and whitelist it before cutover.
 5. If you lack Partner Portal access, contact your account manager or support now.

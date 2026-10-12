@@ -15,7 +15,7 @@ ENV = {
     "MTN_ENVIRONMENT": "mtnuganda",
 }
 MOMO_PREFIXES = ("COLLECTION_", "DISBURSEMENT_", "REMITTANCE_", "MOMO_")
-MOMO_VARIABLES = {"BASE_URL", "MTN_ENVIRONMENT", "CALLBACK_URL", "CURRENCY", "QUOTAGUARDSTATIC_URL"}
+MOMO_VARIABLES = {"BASE_URL", "NEW_BASE_URL", "MTN_ENVIRONMENT", "CALLBACK_URL", "CURRENCY", "QUOTAGUARDSTATIC_URL"}
 
 
 @pytest.fixture
@@ -104,6 +104,21 @@ def test_check_command(env, mocked, resolves, capsys):
 
     assert main(["check"]) == 0
     assert "OK    https://momoapi.momo.africa is reachable (HTTP 404) via 203.0.113.7" in capsys.readouterr().out
+
+
+def test_check_command_platform_reads_that_platforms_url(env, mocked, resolves, capsys):
+    os.environ.update({"BASE_URL": LEGACY_PLATFORM_URL, "NEW_BASE_URL": "https://new.example"})
+    mocked.get(LEGACY_PLATFORM_URL, status=404)
+    mocked.get("https://new.example", status=404)
+
+    assert main(["check"]) == 0
+    assert main(["check", "--platform", "new"]) == 0
+    del os.environ["NEW_BASE_URL"]
+    mocked.get(NEW_PLATFORM_URL, status=404)
+    assert main(["check", "--platform", "new"]) == 0
+
+    out = capsys.readouterr().out
+    assert [line.split()[1] for line in out.splitlines()] == [LEGACY_PLATFORM_URL, "https://new.example", NEW_PLATFORM_URL]
 
 
 def test_check_connectivity_dns_failure(monkeypatch):

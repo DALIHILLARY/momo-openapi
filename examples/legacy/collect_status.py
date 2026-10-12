@@ -6,6 +6,7 @@ reference from examples/legacy/collect.py. One from the new platform is not foun
 Reads .env:
 - COLLECTION_PRIMARY_KEY
 - COLLECTION_USER_ID and COLLECTION_API_SECRET: the old API user and API key
+- BASE_URL, if set; defaults to https://proxy.momoapi.mtn.com
 - MTN_ENVIRONMENT
 
     .venv/bin/python examples/legacy/collect_status.py <reference>

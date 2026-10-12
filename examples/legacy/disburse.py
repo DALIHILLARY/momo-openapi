@@ -5,6 +5,7 @@ Sends money from your disbursement account to the wallet.
 Reads .env:
 - DISBURSEMENT_PRIMARY_KEY
 - DISBURSEMENT_USER_ID and DISBURSEMENT_API_SECRET: the old API user and API key
+- BASE_URL, if set; defaults to https://proxy.momoapi.mtn.com
 - MTN_ENVIRONMENT, CURRENCY and, if set, CALLBACK_URL
 - MOMO_TEST_PHONE, if set, as the default --phone
 

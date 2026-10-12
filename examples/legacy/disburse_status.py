@@ -6,6 +6,7 @@ reference from examples/legacy/disburse.py. One from the new platform is not fou
 Reads .env:
 - DISBURSEMENT_PRIMARY_KEY
 - DISBURSEMENT_USER_ID and DISBURSEMENT_API_SECRET: the old API user and API key
+- BASE_URL, if set; defaults to https://proxy.momoapi.mtn.com
 - MTN_ENVIRONMENT
 
     .venv/bin/python examples/legacy/disburse_status.py <reference>

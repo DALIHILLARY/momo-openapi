@@ -84,7 +84,6 @@ def test_from_env_reports_missing_variables():
 SIDE_BY_SIDE_ENV = {
     "COLLECTION_PRIMARY_KEY": "sub-key",
     "MTN_ENVIRONMENT": "mtnuganda",
-    "BASE_URL": NEW_PLATFORM_URL,
     "COLLECTION_USER_ID": "old-api-user",
     "COLLECTION_API_SECRET": "old-api-key",
     "COLLECTION_NEW_USER_ID": "new-user-id",
@@ -94,14 +93,33 @@ SIDE_BY_SIDE_ENV = {
 
 def test_from_env_legacy_platform_uses_old_api_user_and_key():
     config = MomoConfig.from_env("collection", SIDE_BY_SIDE_ENV, platform="legacy")
-    assert config.base_url == LEGACY_PLATFORM_URL  # BASE_URL is ignored once a platform is given
+    assert config.base_url == LEGACY_PLATFORM_URL
     assert (config.user_id, config.credential_token) == ("old-api-user", "old-api-key")
+
+
+def test_from_env_legacy_platform_reads_base_url():
+    env = {**SIDE_BY_SIDE_ENV, "BASE_URL": "https://legacy.example/", "NEW_BASE_URL": "https://new.example"}
+    assert MomoConfig.from_env("collection", env, platform="legacy").base_url == "https://legacy.example"
 
 
 def test_from_env_new_platform_uses_new_credentials():
     config = MomoConfig.from_env("collection", SIDE_BY_SIDE_ENV, platform="new")
     assert config.base_url == NEW_PLATFORM_URL
     assert (config.user_id, config.credential_token) == ("new-user-id", "new-token")
+
+
+def test_from_env_new_platform_reads_new_base_url_not_base_url():
+    env = {**SIDE_BY_SIDE_ENV, "BASE_URL": LEGACY_PLATFORM_URL}
+    assert MomoConfig.from_env("collection", env, platform="new").base_url == NEW_PLATFORM_URL
+    env["NEW_BASE_URL"] = "https://new.example"
+    assert MomoConfig.from_env("collection", env, platform="new").base_url == "https://new.example"
+
+
+def test_from_env_without_platform_ignores_new_base_url():
+    env = {**SIDE_BY_SIDE_ENV, "NEW_BASE_URL": "https://new.example"}
+    assert MomoConfig.from_env("collection", env).base_url == NEW_PLATFORM_URL
+    env["BASE_URL"] = LEGACY_PLATFORM_URL
+    assert MomoConfig.from_env("collection", env).base_url == LEGACY_PLATFORM_URL
 
 
 def test_from_env_new_platform_after_cutover_names():

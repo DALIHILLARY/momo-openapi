@@ -3,6 +3,7 @@
 Reads .env, where PRODUCT is COLLECTION, DISBURSEMENT or REMITTANCE:
 - PRODUCT_PRIMARY_KEY
 - PRODUCT_USER_ID and PRODUCT_API_SECRET: the old API user and API key
+- BASE_URL, if set; defaults to https://proxy.momoapi.mtn.com
 - MTN_ENVIRONMENT
 
     .venv/bin/python examples/legacy/check_credentials.py             # collection

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Sequence
 
 from .collection import Collection
-from .config import NEW_PLATFORM_URL, PLATFORM_URLS, PRODUCTS, MomoConfig
+from .config import NEW_PLATFORM_URL, PLATFORM_URLS, PRODUCTS, MomoConfig, base_url_from_env
 from .connectivity import check_connectivity
 from .disbursement import Disbursement
 from .errors import ConfigurationError, MomoError
@@ -31,6 +31,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     check = commands.add_parser("check", help="check that this machine can reach the MoMo base URL")
     check.add_argument("--base-url", help=f"defaults to $BASE_URL, then {NEW_PLATFORM_URL}")
+    check.add_argument(
+        "--platform",
+        choices=PLATFORM_URLS,
+        help="check this platform's URL instead: $BASE_URL for legacy, $NEW_BASE_URL for new, else MTN's",
+    )
     check.add_argument("--timeout", type=float, default=10.0)
 
     token = commands.add_parser("token", help="create an access token with credentials from the environment")
@@ -39,7 +44,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     token.add_argument(
         "--platform",
         choices=PLATFORM_URLS,
-        help="use this platform and its own credentials (*_NEW_* for new); default: BASE_URL",
+        help="use this platform's URL and credentials (NEW_BASE_URL and *_NEW_* for new); default: BASE_URL",
     )
 
     args = parser.parse_args(argv)
@@ -49,7 +54,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         if unknown:
             token.error(f"unknown product(s) {', '.join(unknown)}; choose from {', '.join(PRODUCTS)}")
     if args.command == "check":
-        return _check(args.base_url or os.environ.get("BASE_URL") or NEW_PLATFORM_URL, args.timeout)
+        base_url = args.base_url or base_url_from_env(os.environ, args.platform) or NEW_PLATFORM_URL
+        return _check(base_url, args.timeout)
     return _token(args.products or PRODUCTS, explicit=bool(args.products), platform=args.platform)
 
 

@@ -1,6 +1,6 @@
 # Examples
 
-One script per platform and operation. The `legacy/` and `new/` versions of a script are identical except for `platform="legacy"` or `platform="new"`, which picks the base URL and that platform's own credentials.
+One script per platform and operation. The `legacy/` and `new/` versions of a script are identical except for `platform="legacy"` or `platform="new"`, which reads that platform's own base URL and credentials.
 
 | Operation | Legacy (`proxy.momoapi.mtn.com`) | New (`momoapi.momo.africa`) |
 |---|---|---|
@@ -19,10 +19,11 @@ Copy [.env.example](../.env.example) to `.env` in the repo root and fill in the 
 
 | | Legacy | New |
 |---|---|---|
+| Base URL | `BASE_URL`, default `https://proxy.momoapi.mtn.com` | `NEW_BASE_URL`, default `https://momoapi.momo.africa` |
 | Credentials | `COLLECTION_USER_ID` + `COLLECTION_API_SECRET` | `COLLECTION_NEW_USER_ID` + `COLLECTION_NEW_CREDENTIAL_TOKEN` |
 | Shared | `COLLECTION_PRIMARY_KEY`, `MTN_ENVIRONMENT`, `CURRENCY`, `CALLBACK_URL` | same |
 
-`DISBURSEMENT_*` and `REMITTANCE_*` follow the same pattern. `MOMO_TEST_PHONE` sets the default `--phone`. `BASE_URL` is ignored, because each script pins its platform.
+`DISBURSEMENT_*` and `REMITTANCE_*` follow the same pattern. `MOMO_TEST_PHONE` sets the default `--phone`.
 
 The scripts need `python-dotenv` (`pip install "momo-openapi[dotenv]"`). Run them from the repo root:
 

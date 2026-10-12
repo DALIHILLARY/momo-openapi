@@ -4,6 +4,7 @@ Reads .env, where PRODUCT is COLLECTION, DISBURSEMENT or REMITTANCE:
 - PRODUCT_PRIMARY_KEY
 - PRODUCT_NEW_USER_ID and PRODUCT_NEW_CREDENTIAL_TOKEN: System Credentials from the
   Partner Portal. After cutover, PRODUCT_USER_ID and PRODUCT_CREDENTIAL_TOKEN work too.
+- NEW_BASE_URL, if set; defaults to https://momoapi.momo.africa
 - MTN_ENVIRONMENT
 
     .venv/bin/python examples/new/check_credentials.py             # collection

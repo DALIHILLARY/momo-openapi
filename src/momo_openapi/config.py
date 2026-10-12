@@ -18,6 +18,8 @@ USER_AGENT = f"momo-openapi/{__version__}"
 SANDBOX_ENVIRONMENT = "sandbox"
 PRODUCTS = ("collection", "disbursement", "remittance")
 PLATFORM_URLS = {"legacy": LEGACY_PLATFORM_URL, "new": NEW_PLATFORM_URL}
+# Like the credentials, the unprefixed name belongs to the legacy platform and NEW_ to the new one.
+PLATFORM_URL_VARIABLES = {"legacy": "BASE_URL", "new": "NEW_BASE_URL"}
 
 
 @dataclass(frozen=True)
@@ -74,11 +76,13 @@ class MomoConfig:
         only need new values. See the README for the full list.
 
         By default BASE_URL picks the platform. ``platform`` ("legacy" or "new")
-        pins it instead and reads that platform's own credentials, so both can be
+        reads that platform's own base URL and credentials instead, so both can be
         configured side by side while they run in parallel:
 
-        - legacy: ``{P}_USER_ID`` and ``{P}_API_SECRET``, the old API user and key
-        - new: ``{P}_NEW_USER_ID`` and ``{P}_NEW_CREDENTIAL_TOKEN``, else
+        - legacy: ``BASE_URL`` (default ``https://proxy.momoapi.mtn.com``) with
+          ``{P}_USER_ID`` and ``{P}_API_SECRET``, the old API user and key
+        - new: ``NEW_BASE_URL`` (default ``https://momoapi.momo.africa``) with
+          ``{P}_NEW_USER_ID`` and ``{P}_NEW_CREDENTIAL_TOKEN``, else
           ``{P}_USER_ID`` and ``{P}_CREDENTIAL_TOKEN``, else the shared
           ``MOMO_USER_ID`` and ``MOMO_CREDENTIAL_TOKEN``
         """
@@ -122,12 +126,23 @@ class MomoConfig:
         timeout = env.get("MOMO_TIMEOUT")
         return cls(
             **values,
-            base_url=PLATFORM_URLS[platform] if platform else env.get("BASE_URL", ""),
+            base_url=base_url_from_env(env, platform),
             callback_url=env.get("CALLBACK_URL") or None,
             currency=env.get("CURRENCY") or None,
             timeout=float(timeout) if timeout else 30.0,
             proxy_url=_first(env, ("MOMO_PROXY_URL", "QUOTAGUARDSTATIC_URL")),
         )
+
+
+def base_url_from_env(env: Mapping[str, str], platform: str | None = None) -> str:
+    """Return the base URL the environment sets for ``platform``.
+
+    With a platform, that platform's variable (BASE_URL or NEW_BASE_URL), else its
+    MTN URL. Without one, BASE_URL or "" so that MomoConfig picks its default.
+    """
+    if platform is None:
+        return env.get("BASE_URL", "")
+    return env.get(PLATFORM_URL_VARIABLES[platform]) or PLATFORM_URLS[platform]
 
 
 def _credential_pairs(prefix: str, platform: str) -> list[tuple[str, str]]:

@@ -6,6 +6,7 @@ Reads .env:
 - DISBURSEMENT_PRIMARY_KEY
 - DISBURSEMENT_NEW_USER_ID and DISBURSEMENT_NEW_CREDENTIAL_TOKEN: System Credentials from the
   Partner Portal. After cutover, DISBURSEMENT_USER_ID and DISBURSEMENT_CREDENTIAL_TOKEN work too.
+- NEW_BASE_URL, if set; defaults to https://momoapi.momo.africa
 - MTN_ENVIRONMENT, CURRENCY and, if set, CALLBACK_URL
 - MOMO_TEST_PHONE, if set, as the default --phone
 

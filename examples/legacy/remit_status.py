@@ -6,6 +6,7 @@ reference from examples/legacy/remit.py. One from the new platform is not found 
 Reads .env:
 - REMITTANCE_PRIMARY_KEY
 - REMITTANCE_USER_ID and REMITTANCE_API_SECRET: the old API user and API key
+- BASE_URL, if set; defaults to https://proxy.momoapi.mtn.com
 - MTN_ENVIRONMENT
 
     .venv/bin/python examples/legacy/remit_status.py <reference>
