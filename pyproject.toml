@@ -45,6 +45,25 @@ packages = ["src/momo_openapi"]
 [tool.hatch.build.targets.sdist]
 only-include = ["src/momo_openapi", "tests", "README.md", "LICENSE", "CHANGELOG.md", "pyproject.toml", ".env.example"]
 
+# python-semantic-release picks the next version from Conventional Commits since the last v* tag.
+[tool.semantic_release]
+version_variables = ["src/momo_openapi/_version.py:__version__"]
+commit_message = "chore(release): {version}"
+allow_zero_version = true
+# While on 0.x, a breaking change bumps the minor version instead of releasing 1.0.0.
+major_on_zero = false
+# The workflow builds with uv after the release commit.
+build_command = ""
+
+[tool.semantic_release.branches.main]
+match = "main"
+
+[tool.semantic_release.changelog]
+exclude_commit_patterns = ['''^(?:build|chore|ci|style|test)(?:\([^)]*\))?:''']
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["live: sends real requests to MoMo; needs MOMO_LIVE_TESTS=1 and credentials"]

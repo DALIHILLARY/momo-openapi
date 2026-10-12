@@ -236,10 +236,18 @@ uv venv && uv pip install -e ".[dev]"
 
 [.github/workflows/publish.yml](.github/workflows/publish.yml) publishes to PyPI with [Trusted Publishing](https://docs.pypi.org/trusted-publishers/), so no API token is stored anywhere.
 
-1. Bump `__version__` in [src/momo_openapi/_version.py](src/momo_openapi/_version.py), add a [CHANGELOG.md](CHANGELOG.md) entry, then commit and push.
-2. Publish a GitHub release tagged `v<version>`, e.g. `v0.1.1`.
+Every push to `main` runs it. Releases are versioned automatically by [python-semantic-release](https://python-semantic-release.readthedocs.io/) from [Conventional Commits](https://www.conventionalcommits.org/) since the last `v*` tag, so don't edit `__version__` or [CHANGELOG.md](CHANGELOG.md) by hand.
 
-The workflow checks that the tag matches `__version__`, runs the tests, builds and checks the distributions, and uploads them through the `pypi` environment. If that environment requires a reviewer, the upload waits for approval.
+| Commit | Release |
+| --- | --- |
+| `fix: ...`, `perf: ...` | patch, 0.1.0 → 0.1.1 |
+| `feat: ...` | minor, 0.1.0 → 0.2.0 |
+| `!` after any type (`feat!: ...`) or a `BREAKING CHANGE:` footer | minor while on 0.x, major from 1.0.0 |
+| `docs:`, `refactor:`, `test:`, `ci:`, `chore:`, ... | none on its own |
+
+The workflow runs the tests and checks the build. If a release is due, it bumps `__version__` in [src/momo_openapi/_version.py](src/momo_openapi/_version.py), adds the commit subjects to the changelog, commits `chore(release): <version>`, tags `v<version>`, creates the GitHub release and uploads to PyPI through the `pypi` environment. If that environment requires a reviewer, the upload waits for approval. Commit subjects become changelog entries, so write them for users. To release 1.0.0, set `major_on_zero = true` under `[tool.semantic_release]` in [pyproject.toml](pyproject.toml) and push a breaking change.
+
+To preview the next version locally: `uvx --from python-semantic-release==10.7.0 semantic-release version --print`.
 
 ## License
 

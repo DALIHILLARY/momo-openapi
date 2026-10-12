@@ -1,19 +1,22 @@
-# Publishes momo-openapi to PyPI with Trusted Publishing, so no API token is stored anywhere.
-# The PyPI publisher must match: owner DALIHILLARY, repository mtn-momo-api,
-# workflow publish.yml, environment pypi.
+# Releases momo-openapi on every push to main and publishes it to PyPI with Trusted
+# Publishing, so no API token is stored anywhere. The PyPI publisher must match:
+# owner DALIHILLARY, repository momo-openapi, workflow publish.yml, environment pypi.
 #
-# To release: bump __version__ in src/momo_openapi/_version.py, then publish a
-# GitHub release tagged v<version>, e.g. v0.1.1.
+# python-semantic-release picks the version from the Conventional Commits since the
+# last v* tag: fix: or perf: is a patch, feat: is a minor, and a breaking change (feat!:
+# or a BREAKING CHANGE: footer) is a minor while on 0.x. Other types don't release.
+# It bumps __version__, updates CHANGELOG.md, commits, tags v<version> and creates the
+# GitHub release. Configuration is under [tool.semantic_release] in pyproject.toml.
 name: Publish to PyPI
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
 
 permissions: {}
 
 jobs:
-  build:
+  test:
     name: Test and build
     runs-on: ubuntu-latest
     permissions:
@@ -25,19 +28,10 @@ jobs:
 
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
 
-      - name: Check the release tag matches the package version
-        env:
-          TAG: ${{ github.event.release.tag_name }}
-        run: |
-          version=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' src/momo_openapi/_version.py)
-          if [ "${TAG#v}" != "$version" ]; then
-            echo "::error::Release tag $TAG does not match __version__ $version in src/momo_openapi/_version.py"
-            exit 1
-          fi
-
       - name: Run tests
         run: uv run --extra dev pytest
 
+      # Checked before anything is tagged, so a broken build never gets a version.
       - name: Build
         run: uv build
 
@@ -46,7 +40,49 @@ jobs:
           uvx twine check --strict dist/*
           tar -tzf dist/*.tar.gz
 
+  release:
+    name: Version and tag
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-release-${{ github.ref_name }}
+      cancel-in-progress: false
+    permissions:
+      contents: write  # push the release commit and tag, and create the GitHub release
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0  # semantic-release reads the commits and tags
+          persist-credentials: false  # semantic-release pushes with github_token itself
+
+      # Release the commit that triggered this run. If main has moved on since,
+      # semantic-release refuses to push and the newer run releases instead.
+      - name: Check out the triggering commit
+        env:
+          SHA: ${{ github.sha }}
+        run: git reset --hard "$SHA"
+
+      - name: Version, tag and create the GitHub release
+        id: release
+        uses: python-semantic-release/python-semantic-release@b700dbeb1f431a0fcc30a79f3f0869407fe07278  # v10.7.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git_committer_name: github-actions[bot]
+          git_committer_email: 41898282+github-actions[bot]@users.noreply.github.com
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        if: steps.release.outputs.released == 'true'
+
+      - name: Build
+        if: steps.release.outputs.released == 'true'
+        run: uv build
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        if: steps.release.outputs.released == 'true'
         with:
           name: dist
           path: dist/
@@ -54,11 +90,12 @@ jobs:
 
   publish:
     name: Publish to PyPI
-    needs: build
+    needs: release
+    if: needs.release.outputs.released == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/momo-openapi/
+      url: https://pypi.org/project/momo-openapi/${{ needs.release.outputs.version }}/
     permissions:
       id-token: write  # exchanged with PyPI for a short-lived upload token
     steps:
