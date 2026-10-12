@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.1.2 (2026-10-12)
+
+### Bug Fixes
+
+- Change to momo_platform
+  ([`5694ad4`](https://github.com/DALIHILLARY/momo-openapi/commit/5694ad4b36dc61937967f3b30b5478b1abf44187))
+
+
 ## v0.1.1 (2026-10-12)
 
 ### Bug Fixes
